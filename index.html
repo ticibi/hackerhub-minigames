@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hacker's Challenge</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            width: 1024px;
+            height: 768px;
+            margin: 20px auto;
+            background: #1a1a1a;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 200px;
+            background: #222;
+            padding: 20px;
+            border-right: 1px solid #00ff00;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 20px;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 1.2em;
+        }
+
+        .nav-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #111;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover {
+            background: #333;
+        }
+
+        .nav-item.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .game-section, .times-section {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+            display: none;
+        }
+
+        .game-section.active, .times-section.active {
+            display: block;
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .number-cell {
+            padding: 10px;
+            text-align: center;
+            background: #111;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .number-cell:hover {
+            background: #222;
+        }
+
+        .number-cell.correct {
+            background: #00ff00;
+            color: #000;
+        }
+
+        input {
+            background: #111;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 5px 0;
+            width: 200px;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #00cc00;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .timer {
+            color: #ff4444;
+            margin: 5px 0;
+        }
+
+        .fuzzy-hint {
+            color: #00cc00;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .time-log {
+            font-size: 0.8em;
+            color: #00cc00;
+            margin-top: 5px;
+        }
+
+        .fail-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ff0000;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .fail-overlay.show {
+            opacity: 1;
+        }
+
+        .times-section p {
+            margin: 10px 0;
+        }
+
+        .code-display {
+            background: #111;
+            padding: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .wire-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 2px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .wire-cell {
+            padding: 10px;
+            text-align: center;
+            background: #111;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .wire-cell:hover {
+            background: #222;
+        }
+
+        .wire-cell.start {
+            background: #006600;
+        }
+
+        .wire-cell.end {
+            background: #660000;
+        }
+
+        .wire-cell.selected {
+            background: #00cc00;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .memory-card {
+            padding: 15px;
+            text-align: center;
+            background: #111;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .memory-card:hover {
+            background: #222;
+        }
+
+        .memory-card.flipped {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .hack-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            margin: 10px 0;
+        }
+
+        .hack-cell {
+            padding: 10px;
+            text-align: center;
+            background: #111;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hack-cell:hover {
+            background: #222;
+        }
+
+        .hack-cell.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .firewall-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .firewall-pieces, .firewall-target {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .firewall-piece, .firewall-slot {
+            width: 100px;
+            height: 40px;
+            background: #111;
+            text-align: center;
+            line-height: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .firewall-piece {
+            user-select: none;
+        }
+
+        .firewall-piece:hover, .firewall-slot:hover {
+            background: #222;
+        }
+
+        .firewall-slot.filled {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .data-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .data-fragments, .data-sequence {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .data-fragment, .data-slot {
+            width: 80px;
+            height: 40px;
+            background: #111;
+            text-align: center;
+            line-height: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .data-fragment {
+            user-select: none;
+        }
+
+        .data-fragment:hover, .data-slot:hover {
+            background: #222;
+        }
+
+        .data-slot.filled {
+            background: #00ff00;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h2>Hacker's Hub</h2>
+            <div class="nav-item" onclick="showGame('sequence')">Sequence Infiltration</div>
+            <div class="nav-item" onclick="showGame('binary')">Binary Breach</div>
+            <div class="nav-item" onclick="showGame('password')">Password Matrix</div>
+            <div class="nav-item" onclick="showGame('code')">Code Scramble</div>
+            <div class="nav-item" onclick="showGame('wire')">Wire Connector</div>
+            <div class="nav-item" onclick="showGame('memory')">Memory Match</div>
+            <div class="nav-item" onclick="showGame('hack')">Hack Grid</div>
+            <div class="nav-item" onclick="showGame('firewall')">Firewall Bypass</div>
+            <div class="nav-item" onclick="showGame('data')">Data Reassembly</div>
+            <div class="nav-item" onclick="showGame('times')">View Times</div>
+        </div>
+
+        <div class="content">
+            <!-- Game 1: Number Sequence -->
+            <div id="sequence" class="game-section">
+                <h3>[1] Sequence Infiltration</h3>
+                <p>Find sequence: <span id="targetSequence"></span> (20s limit)</p>
+                <div id="timer" class="timer">Time: 20.0s</div>
+                <div id="numberGrid" class="number-grid">
+                    <div id="failOverlay" class="fail-overlay">FAILURE</div>
+                </div>
+                <div id="sequenceStatus" class="status"></div>
+                <div id="sequenceTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 2: Binary Decoder -->
+            <div id="binary" class="game-section">
+                <h3>[2] Binary Breach</h3>
+                <p>Decode: <span id="binaryCode"></span></p>
+                <div id="binaryTimer" class="timer">Time: 30.0s</div>
+                <input id="binaryInput" type="text" placeholder="Enter decoded text" onkeydown="if(event.key === 'Enter') checkBinary()">
+                <button onclick="checkBinary()">Submit</button>
+                <div id="binaryStatus" class="status"></div>
+                <div id="binaryTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 3: Password Cracker -->
+            <div id="password" class="game-section">
+                <h3>[3] Password Matrix</h3>
+                <p>Hint: <span id="fuzzyHint" class="fuzzy-hint">************</span></p>
+                <div id="passwordTimer" class="timer">Time: 60.0s</div>
+                <input id="passwordInput" type="text" placeholder="Enter password" onkeydown="if(event.key === 'Enter') checkPassword()">
+                <button onclick="checkPassword()">Crack</button>
+                <div id="passwordStatus" class="status"></div>
+                <div id="timeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 4: Code Scramble -->
+            <div id="code" class="game-section">
+                <h3>[4] Code Scramble</h3>
+                <p>Unscramble the code (30s limit)</p>
+                <div id="codeTimer" class="timer">Time: 30.0s</div>
+                <div id="scrambledCode" class="code-display"></div>
+                <input id="codeInput" type="text" placeholder="Enter unscrambled code" onkeydown="if(event.key === 'Enter') checkCode()">
+                <button onclick="checkCode()">Submit</button>
+                <div id="codeStatus" class="status"></div>
+                <div id="codeTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 5: Wire Connector -->
+            <div id="wire" class="game-section">
+                <h3>[5] Wire Connector</h3>
+                <p>Match wires to terminals (40s limit)</p>
+                <div id="wireTimer" class="timer">Time: 40.0s</div>
+                <div id="wireGrid" class="wire-grid"></div>
+                <div id="wireStatus" class="status"></div>
+                <div id="wireTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 6: Memory Match -->
+            <div id="memory" class="game-section">
+                <h3>[6] Memory Match</h3>
+                <p>Match all pairs (50s limit)</p>
+                <div id="memoryTimer" class="timer">Time: 50.0s</div>
+                <div id="memoryGrid" class="memory-grid"></div>
+                <div id="memoryStatus" class="status"></div>
+                <div id="memoryTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 7: Hack Grid -->
+            <div id="hack" class="game-section">
+                <h3>[7] Hack Grid</h3>
+                <p>Disable all nodes (30s limit)</p>
+                <div id="hackTimer" class="timer">Time: 30.0s</div>
+                <div id="hackGrid" class="hack-grid"></div>
+                <div id="hackStatus" class="status"></div>
+                <div id="hackTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 8: Firewall Bypass -->
+            <div id="firewall" class="game-section">
+                <h3>[8] Firewall Bypass</h3>
+                <p>Assemble firewall key (40s limit)</p>
+                <div id="firewallTimer" class="timer">Time: 40.0s</div>
+                <div id="firewallContainer" class="firewall-container">
+                    <div id="firewallPieces" class="firewall-pieces"></div>
+                    <div id="firewallTarget" class="firewall-target"></div>
+                </div>
+                <div id="firewallStatus" class="status"></div>
+                <div id="firewallTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Game 9: Data Reassembly -->
+            <div id="data" class="game-section">
+                <h3>[9] Data Reassembly</h3>
+                <p>Rebuild data stream (35s limit)</p>
+                <div id="dataTimer" class="timer">Time: 35.0s</div>
+                <div id="dataContainer" class="data-container">
+                    <div id="dataFragments" class="data-fragments"></div>
+                    <div id="dataSequence" class="data-sequence"></div>
+                </div>
+                <div id="dataStatus" class="status"></div>
+                <div id="dataTimeLog" class="time-log"></div>
+            </div>
+
+            <!-- Times Page -->
+            <div id="times" class="times-section">
+                <h3>Challenge Times</h3>
+                <p><strong>Sequence Infiltration:</strong></p>
+                <div id="timesSequence"></div>
+                <p><strong>Binary Breach:</strong></p>
+                <div id="timesBinary"></div>
+                <p><strong>Password Matrix:</strong></p>
+                <div id="timesPassword"></div>
+                <p><strong>Code Scramble:</strong></p>
+                <div id="timesCode"></div>
+                <p><strong>Wire Connector:</strong></p>
+                <div id="timesWire"></div>
+                <p><strong>Memory Match:</strong></p>
+                <div id="timesMemory"></div>
+                <p><strong>Hack Grid:</strong></p>
+                <div id="timesHack"></div>
+                <p><strong>Firewall Bypass:</strong></p>
+                <div id="timesFirewall"></div>
+                <p><strong>Data Reassembly:</strong></p>
+                <div id="timesData"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation
+        function showGame(gameId) {
+            document.querySelectorAll('.game-section, .times-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            document.getElementById(gameId).classList.add('active');
+            document.querySelector(`.nav-item[onclick="showGame('${gameId}')"]`).classList.add('active');
+
+            if (gameId === 'sequence') setupSequenceGame();
+            if (gameId === 'binary') setupBinaryGame();
+            if (gameId === 'password') document.getElementById('passwordInput').focus();
+            if (gameId === 'code') setupCodeGame();
+            if (gameId === 'wire') setupWireGame();
+            if (gameId === 'memory') setupMemoryGame();
+            if (gameId === 'hack') setupHackGame();
+            if (gameId === 'firewall') setupFirewallGame();
+            if (gameId === 'data') setupDataGame();
+            if (gameId === 'times') updateTimesPage();
+        }
+
+        // Game 1: Number Sequence
+        let sequence = [];
+        let selectedNumbers = [];
+        let timerInterval = null;
+        let timeLeft = 20;
+        let sequenceStartTime = null;
+        let sequenceTimeLog = [];
+        let isLocked = false;
+
+        function generateRandomSequence() {
+            const numbers = Array.from({length: 25}, (_, i) => i + 1);
+            const shuffled = numbers.sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, 5);
+        }
+
+        function setupSequenceGame() {
+            sequence = generateRandomSequence();
+            document.getElementById('targetSequence').textContent = sequence.join('-');
+            selectedNumbers = [];
+            if (!timerInterval) timeLeft = 20;
+            document.getElementById('timer').textContent = `Time: ${timeLeft.toFixed(1)}s`;
+            document.getElementById('sequenceStatus').textContent = '';
+
+            const grid = document.getElementById('numberGrid');
+            grid.innerHTML = '<div id="failOverlay" class="fail-overlay">FAILURE</div>';
+            const allNumbers = Array.from({length: 25}, (_, i) => i + 1)
+                .sort(() => Math.random() - 0.5);
+            
+            allNumbers.forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'number-cell';
+                cell.textContent = num;
+                cell.onclick = () => selectNumber(num, cell);
+                grid.appendChild(cell);
+            });
+            updateSequenceTimeLog();
+        }
+
+        function selectNumber(num, cell) {
+            if (isLocked) return;
+
+            if (!sequenceStartTime) {
+                sequenceStartTime = Date.now();
+                startTimer();
+                document.getElementById('sequenceStatus').textContent = 'Sequence active...';
+            }
+
+            if (selectedNumbers.length < sequence.length && !selectedNumbers.includes(num)) {
+                selectedNumbers.push(num);
+                cell.classList.add('correct');
+                
+                if (selectedNumbers.length === sequence.length) {
+                    checkSequence();
+                }
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                document.getElementById('timer').textContent = `Time: ${timeLeft.toFixed(1)}s`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('sequenceStatus').textContent = 'FAIL: Time expired!';
+                    disableGrid('numberGrid');
+                    setTimeout(setupSequenceGame, 1000);
+                }
+            }, 100);
+        }
+
+        function checkSequence() {
+            const isCorrect = sequence.every((num, i) => num === selectedNumbers[i]);
+            const timeTaken = ((Date.now() - sequenceStartTime) / 1000).toFixed(1);
+            
+            if (isCorrect) {
+                clearInterval(timerInterval);
+                sequenceTimeLog.push(`${sequence.join('-')}: ${timeTaken}s`);
+                updateSequenceTimeLog();
+                document.getElementById('sequenceStatus').textContent = 
+                    `SUCCESS: Sequence cracked! (${timeTaken}s)`;
+                disableGrid('numberGrid');
+                
+                let count = 0;
+                const rollInterval = setInterval(() => {
+                    document.getElementById('numberGrid').querySelectorAll('.number-cell')
+                        .forEach(cell => {
+                            cell.textContent = Math.floor(Math.random() * 25) + 1;
+                        });
+                    count++;
+                    if (count > 10) {
+                        clearInterval(rollInterval);
+                        setupSequenceGame();
+                    }
+                }, 100);
+            } else {
+                document.getElementById('sequenceStatus').textContent = 'FAIL: Incorrect sequence';
+                showFailOverlay();
+            }
+        }
+
+        function showFailOverlay() {
+            const overlay = document.getElementById('failOverlay');
+            overlay.classList.add('show');
+            isLocked = true;
+            disableGrid('numberGrid');
+
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                isLocked = false;
+                setupSequenceGame();
+            }, 2000);
+        }
+
+        function updateSequenceTimeLog() {
+            document.getElementById('sequenceTimeLog').innerHTML = 
+                'Sequence Times:<br>' + (sequenceTimeLog.length ? sequenceTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 2: Binary Decoder
+        let binaryWord = '';
+        let binaryStartTime = null;
+        let binaryTimerInterval = null;
+        let binaryTimeLeft = 30;
+        let binaryTimeLog = [];
+
+        function generateRandomWord() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let word = '';
+            for (let i = 0; i < 4; i++) {
+                word += letters[Math.floor(Math.random() * letters.length)];
+            }
+            return word;
+        }
+
+        function wordToBinary(word) {
+            return word.split('').map(char => 
+                char.charCodeAt(0).toString(2).padStart(8, '0')
+            ).join(' ');
+        }
+
+        function setupBinaryGame() {
+            binaryWord = generateRandomWord();
+            document.getElementById('binaryCode').textContent = wordToBinary(binaryWord);
+            if (!binaryTimerInterval) binaryTimeLeft = 30;
+            document.getElementById('binaryTimer').textContent = `Time: ${binaryTimeLeft.toFixed(1)}s`;
+            document.getElementById('binaryInput').value = '';
+            document.getElementById('binaryStatus').textContent = '';
+            updateBinaryTimeLog();
+        }
+
+        function startBinaryTimer() {
+            binaryTimerInterval = setInterval(() => {
+                binaryTimeLeft -= 0.1;
+                document.getElementById('binaryTimer').textContent = `Time: ${binaryTimeLeft.toFixed(1)}s`;
+                
+                if (binaryTimeLeft <= 0) {
+                    clearInterval(binaryTimerInterval);
+                    document.getElementById('binaryStatus').textContent = 'FAIL: Time expired!';
+                    setTimeout(setupBinaryGame, 1000);
+                }
+            }, 100);
+        }
+
+        function checkBinary() {
+            if (!binaryStartTime) {
+                binaryStartTime = Date.now();
+                startBinaryTimer();
+                document.getElementById('binaryStatus').textContent = 'Decoding active...';
+            }
+
+            const input = document.getElementById('binaryInput').value.toUpperCase();
+            const status = document.getElementById('binaryStatus');
+            if (input === binaryWord) {
+                clearInterval(binaryTimerInterval);
+                const timeTaken = ((Date.now() - binaryStartTime) / 1000).toFixed(1);
+                binaryTimeLog.push(`${binaryWord}: ${timeTaken}s`);
+                updateBinaryTimeLog();
+                status.textContent = `SUCCESS: Binary decrypted! (${timeTaken}s)`;
+                setTimeout(setupBinaryGame, 1000);
+            } else {
+                status.textContent = 'FAIL: Incorrect decryption';
+            }
+        }
+
+        function updateBinaryTimeLog() {
+            document.getElementById('binaryTimeLog').innerHTML = 
+                'Binary Times:<br>' + (binaryTimeLog.length ? binaryTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 3: Password Cracker
+        const passwords = [
+            'password2025',
+            'hacktheplanet',
+            'rootaccess123',
+            'cyberpunk2077',
+            'quantumbreak'
+        ];
+        let currentPasswordIndex = 0;
+        let hintInterval = null;
+        let startTime = null;
+        let timeLog = [];
+        let passwordTimeLeft = 60;
+        let passwordTimerInterval = null;
+
+        function updateFuzzyHint() {
+            const currentPassword = passwords[currentPasswordIndex];
+            const hint = Array(currentPassword.length).fill('*');
+            const pos1 = Math.floor(Math.random() * currentPassword.length);
+            let pos2;
+            do {
+                pos2 = Math.floor(Math.random() * currentPassword.length);
+            } while (pos2 === pos1);
+            
+            hint[pos1] = currentPassword[pos1];
+            hint[pos2] = currentPassword[pos2];
+            document.getElementById('fuzzyHint').textContent = hint.join('');
+        }
+
+        function startPasswordGame() {
+            if (!hintInterval) {
+                hintInterval = setInterval(updateFuzzyHint, 500);
+                startTime = Date.now();
+                passwordTimeLeft = 60;
+                document.getElementById('passwordStatus').textContent = 'Cracking in progress...';
+                document.getElementById('passwordInput').focus();
+                startPasswordTimer();
+            }
+        }
+
+        function startPasswordTimer() {
+            passwordTimerInterval = setInterval(() => {
+                passwordTimeLeft -= 0.1;
+                document.getElementById('passwordTimer').textContent = 
+                    `Time: ${passwordTimeLeft.toFixed(1)}s`;
+                
+                if (passwordTimeLeft <= 0) {
+                    clearInterval(passwordTimerInterval);
+                    clearInterval(hintInterval);
+                    document.getElementById('passwordStatus').textContent = 'FAIL: Time expired!';
+                    loadNextPassword();
+                }
+            }, 100);
+        }
+
+        function checkPassword() {
+            if (!startTime) {
+                startPasswordGame();
+                return;
+            }
+
+            const input = document.getElementById('passwordInput').value.toLowerCase();
+            const status = document.getElementById('passwordStatus');
+            const hint = document.getElementById('fuzzyHint');
+            const currentPassword = passwords[currentPasswordIndex];
+
+            if (input === currentPassword) {
+                clearInterval(hintInterval);
+                clearInterval(passwordTimerInterval);
+                const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+                timeLog.push(`${currentPassword}: ${timeTaken}s`);
+                updateTimeLog();
+
+                status.textContent = 'SUCCESS: System access granted!';
+                hint.textContent = currentPassword;
+                hint.style.animation = 'flicker 0.2s infinite';
+
+                setTimeout(() => {
+                    let count = 0;
+                    const rollInterval = setInterval(() => {
+                        hint.textContent = Array(currentPassword.length)
+                            .fill()
+                            .map(() => Math.floor(Math.random() * 10))
+                            .join('');
+                        count++;
+                        if (count > 10) {
+                            clearInterval(rollInterval);
+                            hint.style.animation = 'none';
+                            loadNextPassword();
+                        }
+                    }, 100);
+                }, 1000);
+            } else {
+                status.textContent = 'FAIL: Access denied';
+            }
+        }
+
+        function loadNextPassword() {
+            currentPasswordIndex = (currentPasswordIndex + 1) % passwords.length;
+            hintInterval = null;
+            startTime = null;
+            passwordTimeLeft = 60;
+            if (passwordTimerInterval) clearInterval(passwordTimerInterval);
+            document.getElementById('fuzzyHint').textContent = '*'.repeat(passwords[currentPasswordIndex].length);
+            document.getElementById('passwordTimer').textContent = `Time: ${passwordTimeLeft.toFixed(1)}s`;
+            document.getElementById('passwordStatus').textContent = '';
+            document.getElementById('passwordInput').value = '';
+            startPasswordGame();
+        }
+
+        function updateTimeLog() {
+            document.getElementById('timeLog').innerHTML = 
+                'Crack Times:<br>' + (timeLog.length ? timeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 4: Code Scramble
+        const codeSnippets = [
+            'function hack() { return true; }',
+            'if (x > 0) { console.log("yes"); }',
+            'let data = fetch("api");',
+            'while (true) { break; }',
+            'const key = "secret";'
+        ];
+        let currentCodeIndex = 0;
+        let codeStartTime = null;
+        let codeTimerInterval = null;
+        let codeTimeLeft = 30;
+        let codeTimeLog = [];
+
+        function scrambleCode(code) {
+            const words = code.split(' ');
+            return words.sort(() => Math.random() - 0.5).join(' ');
+        }
+
+        function setupCodeGame() {
+            const code = codeSnippets[currentCodeIndex];
+            document.getElementById('scrambledCode').textContent = scrambleCode(code);
+            if (!codeTimerInterval) codeTimeLeft = 30;
+            document.getElementById('codeTimer').textContent = `Time: ${codeTimeLeft.toFixed(1)}s`;
+            document.getElementById('codeStatus').textContent = '';
+            document.getElementById('codeInput').value = '';
+            updateCodeTimeLog();
+        }
+
+        function startCodeTimer() {
+            codeTimerInterval = setInterval(() => {
+                codeTimeLeft -= 0.1;
+                document.getElementById('codeTimer').textContent = `Time: ${codeTimeLeft.toFixed(1)}s`;
+                
+                if (codeTimeLeft <= 0) {
+                    clearInterval(codeTimerInterval);
+                    document.getElementById('codeStatus').textContent = 'FAIL: Time expired!';
+                    setTimeout(loadNextCode, 1000);
+                }
+            }, 100);
+        }
+
+        function checkCode() {
+            if (!codeStartTime) {
+                codeStartTime = Date.now();
+                startCodeTimer();
+                document.getElementById('codeStatus').textContent = 'Decoding active...';
+            }
+
+            const input = document.getElementById('codeInput').value.trim();
+            const correctCode = codeSnippets[currentCodeIndex];
+            if (input === correctCode) {
+                clearInterval(codeTimerInterval);
+                const timeTaken = ((Date.now() - codeStartTime) / 1000).toFixed(1);
+                codeTimeLog.push(`${correctCode}: ${timeTaken}s`);
+                updateCodeTimeLog();
+                document.getElementById('codeStatus').textContent = `SUCCESS: Code unscrambled! (${timeTaken}s)`;
+                setTimeout(loadNextCode, 1000);
+            } else {
+                document.getElementById('codeStatus').textContent = 'FAIL: Incorrect code';
+            }
+        }
+
+        function loadNextCode() {
+            currentCodeIndex = (currentCodeIndex + 1) % codeSnippets.length;
+            codeStartTime = null;
+            codeTimerInterval = null;
+            codeTimeLeft = 30;
+            setupCodeGame();
+        }
+
+        function updateCodeTimeLog() {
+            document.getElementById('codeTimeLog').innerHTML = 
+                'Code Times:<br>' + (codeTimeLog.length ? codeTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 5: Wire Connector
+        const wireColors = ['R', 'B', 'Y', 'G'];
+        let wireConnections = [];
+        let selectedWire = null;
+        let wireStartTime = null;
+        let wireTimerInterval = null;
+        let wireTimeLeft = 40;
+        let wireTimeLog = [];
+
+        function generateWireConnections() {
+            const starts = wireColors.map(color => ({ color, x: 0, y: Math.floor(Math.random() * 5) }));
+            const ends = wireColors.map(color => ({ color, x: 5, y: Math.floor(Math.random() * 5) }));
+            return { starts, ends };
+        }
+
+        function setupWireGame() {
+            wireConnections = generateWireConnections();
+            selectedWire = null;
+            if (!wireTimerInterval) wireTimeLeft = 40;
+            document.getElementById('wireTimer').textContent = `Time: ${wireTimeLeft.toFixed(1)}s`;
+            document.getElementById('wireStatus').textContent = '';
+
+            const grid = document.getElementById('wireGrid');
+            grid.innerHTML = '';
+            for (let y = 0; y < 5; y++) {
+                for (let x = 0; x < 6; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'wire-cell';
+                    const start = wireConnections.starts.find(s => s.x === x && s.y === y);
+                    const end = wireConnections.ends.find(e => e.x === x && e.y === y);
+                    if (start) {
+                        cell.textContent = start.color;
+                        cell.classList.add('start');
+                    } else if (end) {
+                        cell.textContent = end.color;
+                        cell.classList.add('end');
+                    } else {
+                        cell.textContent = '-';
+                    }
+                    cell.onclick = () => selectWire(x, y, cell);
+                    grid.appendChild(cell);
+                }
+            }
+            updateWireTimeLog();
+        }
+
+        function startWireTimer() {
+            wireTimerInterval = setInterval(() => {
+                wireTimeLeft -= 0.1;
+                document.getElementById('wireTimer').textContent = `Time: ${wireTimeLeft.toFixed(1)}s`;
+                
+                if (wireTimeLeft <= 0) {
+                    clearInterval(wireTimerInterval);
+                    document.getElementById('wireStatus').textContent = 'FAIL: Time expired!';
+                    disableGrid('wireGrid');
+                    setTimeout(setupWireGame, 1000);
+                }
+            }, 100);
+        }
+
+        function selectWire(x, y, cell) {
+            if (!wireStartTime) {
+                wireStartTime = Date.now();
+                startWireTimer();
+                document.getElementById('wireStatus').textContent = 'Connecting active...';
+            }
+
+            const start = wireConnections.starts.find(s => s.x === x && s.y === y);
+            const end = wireConnections.ends.find(e => e.x === x && e.y === y);
+
+            if (start && !selectedWire) {
+                selectedWire = start.color;
+                cell.classList.add('selected');
+            } else if (end && selectedWire === end.color) {
+                cell.classList.add('selected');
+                wireConnections.starts = wireConnections.starts.filter(s => s.color !== selectedWire);
+                wireConnections.ends = wireConnections.ends.filter(e => e.color !== selectedWire);
+                selectedWire = null;
+                if (wireConnections.starts.length === 0) {
+                    clearInterval(wireTimerInterval);
+                    const timeTaken = ((Date.now() - wireStartTime) / 1000).toFixed(1);
+                    wireTimeLog.push(`Wires ${wireTimeLog.length + 1}: ${timeTaken}s`);
+                    updateWireTimeLog();
+                    document.getElementById('wireStatus').textContent = `SUCCESS: All wires connected! (${timeTaken}s)`;
+                    disableGrid('wireGrid');
+                    setTimeout(setupWireGame, 1000);
+                }
+            } else if (selectedWire && (start || end)) {
+                document.getElementById('wireStatus').textContent = 'FAIL: Wrong connection';
+                disableGrid('wireGrid');
+                setTimeout(setupWireGame, 1000);
+            }
+        }
+
+        function updateWireTimeLog() {
+            document.getElementById('wireTimeLog').innerHTML = 
+                'Wire Times:<br>' + (wireTimeLog.length ? wireTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 6: Memory Match
+        const memorySymbols = ['@', '#', '$', '%', '&', '*', '+', '='];
+        let memoryCards = [];
+        let flippedCards = [];
+        let memoryStartTime = null;
+        let memoryTimerInterval = null;
+        let memoryTimeLeft = 50;
+        let memoryTimeLog = [];
+
+        function setupMemoryGame() {
+            memoryCards = [...memorySymbols, ...memorySymbols].sort(() => Math.random() - 0.5);
+            flippedCards = [];
+            if (!memoryTimerInterval) memoryTimeLeft = 50;
+            document.getElementById('memoryTimer').textContent = `Time: ${memoryTimeLeft.toFixed(1)}s`;
+            document.getElementById('memoryStatus').textContent = '';
+
+            const grid = document.getElementById('memoryGrid');
+            grid.innerHTML = '';
+            memoryCards.forEach((symbol, index) => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.textContent = '?';
+                card.dataset.symbol = symbol;
+                card.onclick = () => flipCard(index, card);
+                grid.appendChild(card);
+            });
+            updateMemoryTimeLog();
+        }
+
+        function startMemoryTimer() {
+            memoryTimerInterval = setInterval(() => {
+                memoryTimeLeft -= 0.1;
+                document.getElementById('memoryTimer').textContent = `Time: ${memoryTimeLeft.toFixed(1)}s`;
+                
+                if (memoryTimeLeft <= 0) {
+                    clearInterval(memoryTimerInterval);
+                    document.getElementById('memoryStatus').textContent = 'FAIL: Time expired!';
+                    disableGrid('memoryGrid');
+                    setTimeout(setupMemoryGame, 1000);
+                }
+            }, 100);
+        }
+
+        function flipCard(index, card) {
+            if (!memoryStartTime) {
+                memoryStartTime = Date.now();
+                startMemoryTimer();
+                document.getElementById('memoryStatus').textContent = 'Matching active...';
+            }
+
+            if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
+                card.textContent = card.dataset.symbol;
+                card.classList.add('flipped');
+                flippedCards.push({ index, card });
+
+                if (flippedCards.length === 2) {
+                    setTimeout(checkMemoryMatch, 500);
+                }
+            }
+        }
+
+        function checkMemoryMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.card.dataset.symbol === card2.card.dataset.symbol) {
+                flippedCards = [];
+                if (document.querySelectorAll('.memory-card.flipped').length === memoryCards.length) {
+                    clearInterval(memoryTimerInterval);
+                    const timeTaken = ((Date.now() - memoryStartTime) / 1000).toFixed(1);
+                    memoryTimeLog.push(`Match ${memoryTimeLog.length + 1}: ${timeTaken}s`);
+                    updateMemoryTimeLog();
+                    document.getElementById('memoryStatus').textContent = `SUCCESS: All matched! (${timeTaken}s)`;
+                    disableGrid('memoryGrid');
+                    setTimeout(setupMemoryGame, 1000);
+                }
+            } else {
+                card1.card.textContent = '?';
+                card2.card.textContent = '?';
+                card1.card.classList.remove('flipped');
+                card2.card.classList.remove('flipped');
+                flippedCards = [];
+            }
+        }
+
+        function updateMemoryTimeLog() {
+            document.getElementById('memoryTimeLog').innerHTML = 
+                'Memory Times:<br>' + (memoryTimeLog.length ? memoryTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 7: Hack Grid
+        let hackNodes = [];
+        let hackStartTime = null;
+        let hackTimerInterval = null;
+        let hackTimeLeft = 30;
+        let hackTimeLog = [];
+
+        function generateHackGrid() {
+            const grid = Array(5).fill().map(() => Array(5).fill(false));
+            for (let i = 0; i < 10; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * 5);
+                    y = Math.floor(Math.random() * 5);
+                } while (grid[y][x]);
+                grid[y][x] = true;
+            }
+            return grid;
+        }
+
+        function setupHackGame() {
+            hackNodes = generateHackGrid();
+            if (!hackTimerInterval) hackTimeLeft = 30;
+            document.getElementById('hackTimer').textContent = `Time: ${hackTimeLeft.toFixed(1)}s`;
+            document.getElementById('hackStatus').textContent = '';
+
+            const grid = document.getElementById('hackGrid');
+            grid.innerHTML = '';
+            for (let y = 0; y < 5; y++) {
+                for (let x = 0; x < 5; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'hack-cell';
+                    cell.textContent = hackNodes[y][x] ? 'X' : '-';
+                    cell.onclick = () => toggleHackNode(x, y, cell);
+                    grid.appendChild(cell);
+                }
+            }
+            updateHackTimeLog();
+        }
+
+        function startHackTimer() {
+            hackTimerInterval = setInterval(() => {
+                hackTimeLeft -= 0.1;
+                document.getElementById('hackTimer').textContent = `Time: ${hackTimeLeft.toFixed(1)}s`;
+                
+                if (hackTimeLeft <= 0) {
+                    clearInterval(hackTimerInterval);
+                    document.getElementById('hackStatus').textContent = 'FAIL: Time expired!';
+                    disableGrid('hackGrid');
+                    setTimeout(setupHackGame, 1000);
+                }
+            }, 100);
+        }
+
+        function toggleHackNode(x, y, cell) {
+            if (!hackStartTime) {
+                hackStartTime = Date.now();
+                startHackTimer();
+                document.getElementById('hackStatus').textContent = 'Hacking active...';
+            }
+
+            if (hackNodes[y][x]) {
+                hackNodes[y][x] = false;
+                cell.textContent = '-';
+                cell.classList.remove('active');
+                toggleAdjacentNodes(x, y);
+                if (!hackNodes.flat().includes(true)) {
+                    clearInterval(hackTimerInterval);
+                    const timeTaken = ((Date.now() - hackStartTime) / 1000).toFixed(1);
+                    hackTimeLog.push(`Grid ${hackTimeLog.length + 1}: ${timeTaken}s`);
+                    updateHackTimeLog();
+                    document.getElementById('hackStatus').textContent = `SUCCESS: Grid hacked! (${timeTaken}s)`;
+                    disableGrid('hackGrid');
+                    setTimeout(setupHackGame, 1000);
+                }
+            }
+        }
+
+        function toggleAdjacentNodes(x, y) {
+            const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+            directions.forEach(([dx, dy]) => {
+                const nx = x + dx, ny = y + dy;
+                if (nx >= 0 && nx < 5 && ny >= 0 && ny < 5) {
+                    hackNodes[ny][nx] = !hackNodes[ny][nx];
+                    const cell = document.getElementById('hackGrid').children[ny * 5 + nx];
+                    cell.textContent = hackNodes[ny][nx] ? 'X' : '-';
+                    cell.classList.toggle('active', hackNodes[ny][nx]);
+                }
+            });
+        }
+
+        function updateHackTimeLog() {
+            document.getElementById('hackTimeLog').innerHTML = 
+                'Hack Times:<br>' + (hackTimeLog.length ? hackTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 8: Firewall Bypass
+        const firewallKeys = [
+            ['1010', '0101', '1100', '0011'],
+            ['1111', '0000', '1010', '0101'],
+            ['1001', '0110', '1100', '0011'],
+            ['1110', '0001', '1011', '0100']
+        ];
+        let currentFirewallIndex = 0;
+        let firewallStartTime = null;
+        let firewallTimerInterval = null;
+        let firewallTimeLeft = 40;
+        let firewallTimeLog = [];
+
+        function setupFirewallGame() {
+            const key = firewallKeys[currentFirewallIndex];
+            const shuffledPieces = [...key].sort(() => Math.random() - 0.5);
+            if (!firewallTimerInterval) firewallTimeLeft = 40;
+            document.getElementById('firewallTimer').textContent = `Time: ${firewallTimeLeft.toFixed(1)}s`;
+            document.getElementById('firewallStatus').textContent = '';
+
+            const piecesDiv = document.getElementById('firewallPieces');
+            const targetDiv = document.getElementById('firewallTarget');
+            piecesDiv.innerHTML = '';
+            targetDiv.innerHTML = '';
+
+            shuffledPieces.forEach(piece => {
+                const div = document.createElement('div');
+                div.className = 'firewall-piece';
+                div.textContent = piece;
+                div.draggable = true;
+                div.ondragstart = dragStart;
+                piecesDiv.appendChild(div);
+            });
+
+            key.forEach((_, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'firewall-slot';
+                slot.dataset.index = index;
+                slot.ondrop = dropFirewall;
+                slot.ondragover = allowDrop;
+                targetDiv.appendChild(slot);
+            });
+
+            updateFirewallTimeLog();
+        }
+
+        function startFirewallTimer() {
+            firewallTimerInterval = setInterval(() => {
+                firewallTimeLeft -= 0.1;
+                document.getElementById('firewallTimer').textContent = `Time: ${firewallTimeLeft.toFixed(1)}s`;
+                
+                if (firewallTimeLeft <= 0) {
+                    clearInterval(firewallTimerInterval);
+                    document.getElementById('firewallStatus').textContent = 'FAIL: Time expired!';
+                    disableDragDrop('firewallContainer');
+                    setTimeout(setupFirewallGame, 1000);
+                }
+            }, 100);
+        }
+
+        function dragStart(event) {
+            event.dataTransfer.setData('text', event.target.textContent);
+            if (!firewallStartTime) {
+                firewallStartTime = Date.now();
+                startFirewallTimer();
+                document.getElementById('firewallStatus').textContent = 'Bypass active...';
+            }
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function dropFirewall(event) {
+            event.preventDefault();
+            const data = event.dataTransfer.getData('text');
+            const slot = event.target;
+            if (slot.className === 'firewall-slot' && !slot.classList.contains('filled')) {
+                slot.textContent = data;
+                slot.classList.add('filled');
+                checkFirewall();
+            }
+        }
+
+        function checkFirewall() {
+            const slots = document.querySelectorAll('.firewall-slot');
+            const currentKey = firewallKeys[currentFirewallIndex];
+            let isCorrect = true;
+            slots.forEach((slot, index) => {
+                if (slot.textContent !== currentKey[index]) {
+                    isCorrect = false;
+                }
+            });
+
+            if (isCorrect && slots.length === currentKey.length) {
+                clearInterval(firewallTimerInterval);
+                const timeTaken = ((Date.now() - firewallStartTime) / 1000).toFixed(1);
+                firewallTimeLog.push(`Key ${currentFirewallIndex + 1}: ${timeTaken}s`);
+                updateFirewallTimeLog();
+                document.getElementById('firewallStatus').textContent = `SUCCESS: Firewall bypassed! (${timeTaken}s)`;
+                disableDragDrop('firewallContainer');
+                setTimeout(() => {
+                    currentFirewallIndex = (currentFirewallIndex + 1) % firewallKeys.length;
+                    setupFirewallGame();
+                }, 1000);
+            }
+        }
+
+        function updateFirewallTimeLog() {
+            document.getElementById('firewallTimeLog').innerHTML = 
+                'Firewall Times:<br>' + (firewallTimeLog.length ? firewallTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Game 9: Data Reassembly
+        const dataStreams = [
+            ['D4', 'T2', 'A1', 'S3'],
+            ['C1', 'O3', 'D2', 'E4'],
+            ['B2', 'Y4', 'T1', 'E3'],
+            ['H1', 'A3', 'C2', 'K4']
+        ];
+        let currentDataIndex = 0;
+        let dataStartTime = null;
+        let dataTimerInterval = null;
+        let dataTimeLeft = 35;
+        let dataTimeLog = [];
+
+        function setupDataGame() {
+            const stream = dataStreams[currentDataIndex];
+            const shuffledFragments = [...stream].sort(() => Math.random() - 0.5);
+            if (!dataTimerInterval) dataTimeLeft = 35;
+            document.getElementById('dataTimer').textContent = `Time: ${dataTimeLeft.toFixed(1)}s`;
+            document.getElementById('dataStatus').textContent = '';
+
+            const fragmentsDiv = document.getElementById('dataFragments');
+            const sequenceDiv = document.getElementById('dataSequence');
+            fragmentsDiv.innerHTML = '';
+            sequenceDiv.innerHTML = '';
+
+            shuffledFragments.forEach(fragment => {
+                const div = document.createElement('div');
+                div.className = 'data-fragment';
+                div.textContent = fragment;
+                div.draggable = true;
+                div.ondragstart = dragDataStart;
+                fragmentsDiv.appendChild(div);
+            });
+
+            stream.forEach((_, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'data-slot';
+                slot.dataset.index = index;
+                slot.ondrop = dropData;
+                slot.ondragover = allowDrop;
+                sequenceDiv.appendChild(slot);
+            });
+
+            updateDataTimeLog();
+        }
+
+        function startDataTimer() {
+            dataTimerInterval = setInterval(() => {
+                dataTimeLeft -= 0.1;
+                document.getElementById('dataTimer').textContent = `Time: ${dataTimeLeft.toFixed(1)}s`;
+                
+                if (dataTimeLeft <= 0) {
+                    clearInterval(dataTimerInterval);
+                    document.getElementById('dataStatus').textContent = 'FAIL: Time expired!';
+                    disableDragDrop('dataContainer');
+                    setTimeout(setupDataGame, 1000);
+                }
+            }, 100);
+        }
+
+        function dragDataStart(event) {
+            event.dataTransfer.setData('text', event.target.textContent);
+            if (!dataStartTime) {
+                dataStartTime = Date.now();
+                startDataTimer();
+                document.getElementById('dataStatus').textContent = 'Reassembly active...';
+            }
+        }
+
+        function dropData(event) {
+            event.preventDefault();
+            const data = event.dataTransfer.getData('text');
+            const slot = event.target;
+            if (slot.className === 'data-slot' && !slot.classList.contains('filled')) {
+                slot.textContent = data;
+                slot.classList.add('filled');
+                checkData();
+            }
+        }
+
+        function checkData() {
+            const slots = document.querySelectorAll('.data-slot');
+            const currentStream = dataStreams[currentDataIndex];
+            let isCorrect = true;
+            slots.forEach((slot, index) => {
+                if (slot.textContent !== currentStream[index]) {
+                    isCorrect = false;
+                }
+            });
+
+            if (isCorrect && slots.length === currentStream.length) {
+                clearInterval(dataTimerInterval);
+                const timeTaken = ((Date.now() - dataStartTime) / 1000).toFixed(1);
+                dataTimeLog.push(`Stream ${currentDataIndex + 1}: ${timeTaken}s`);
+                updateDataTimeLog();
+                document.getElementById('dataStatus').textContent = `SUCCESS: Data reassembled! (${timeTaken}s)`;
+                disableDragDrop('dataContainer');
+                setTimeout(() => {
+                    currentDataIndex = (currentDataIndex + 1) % dataStreams.length;
+                    setupDataGame();
+                }, 1000);
+            }
+        }
+
+        function updateDataTimeLog() {
+            document.getElementById('dataTimeLog').innerHTML = 
+                'Data Times:<br>' + (dataTimeLog.length ? dataTimeLog.join('<br>') : 'No times yet');
+        }
+
+        // Generic Disable Grid/Drag Function
+        function disableGrid(gridId) {
+            document.getElementById(gridId).querySelectorAll('.number-cell, .wire-cell, .memory-card, .hack-cell')
+                .forEach(cell => {
+                    cell.onclick = null;
+                    cell.style.cursor = 'default';
+                });
+        }
+
+        function disableDragDrop(containerId) {
+            document.getElementById(containerId).querySelectorAll('.firewall-piece, .firewall-slot, .data-fragment, .data-slot')
+                .forEach(elem => {
+                    elem.draggable = false;
+                    elem.ondrop = null;
+                    elem.ondragover = null;
+                    elem.ondragstart = null;
+                    elem.style.cursor = 'default';
+                });
+        }
+
+        // Times Page
+        function updateTimesPage() {
+            document.getElementById('timesSequence').innerHTML = 
+                sequenceTimeLog.length ? sequenceTimeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesBinary').innerHTML = 
+                binaryTimeLog.length ? binaryTimeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesPassword').innerHTML = 
+                timeLog.length ? timeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesCode').innerHTML = 
+                codeTimeLog.length ? codeTimeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesWire').innerHTML = 
+                wireTimeLog.length ? wireTimeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesMemory').innerHTML = 
+                memoryTimeLog.length ? memoryTimeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesHack').innerHTML = 
+                hackTimeLog.length ? hackTimeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesFirewall').innerHTML = 
+                firewallTimeLog.length ? firewallTimeLog.join('<br>') : 'No times yet';
+            document.getElementById('timesData').innerHTML = 
+                dataTimeLog.length ? dataTimeLog.join('<br>') : 'No times yet';
+        }
+
+        // Initialize
+        showGame('sequence');
+    </script>
+</body>
+</html>
